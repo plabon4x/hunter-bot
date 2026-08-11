@@ -1,6 +1,9 @@
 import os
 import sqlite3
 
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -311,6 +314,21 @@ async def admin_reply(
 # MAIN
 # =========================
 
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Hunter Bot is running")
+
+    def log_message(self, format, *args):
+        pass
+
+
+def run_web_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    server.serve_forever()
+
 def main():
 
     if not TOKEN:
@@ -359,8 +377,17 @@ def main():
             handle_user_message
         )
     )
+    
+    
+    
+    threading.Thread(target=run_web_server, daemon=True).start()
+
+
+
 
     print("🤖 Hunter Bot চলছে...")
+    
+
 
     app.run_polling()
 
